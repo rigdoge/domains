@@ -15,9 +15,6 @@ interface TelegramUpdate {
   };
 }
 
-// 存储消息的 Map
-const messageStore = new Map<string, string[]>();
-
 // 处理 CORS 预检请求
 export async function onRequestOptions() {
   return new Response(null, {
@@ -29,60 +26,6 @@ export async function onRequestOptions() {
       'Access-Control-Max-Age': '86400',
     },
   });
-}
-
-// 处理 GET 请求，用于轮询
-export async function onRequestGet(context: { request: Request; env: Env }) {
-  const url = new URL(context.request.url);
-  const domain = url.searchParams.get('domain');
-  const sessionId = url.searchParams.get('sessionId');
-
-  if (!domain || !sessionId) {
-    return new Response(
-      JSON.stringify({ error: 'Missing domain or sessionId' }),
-      { 
-        status: 400,
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    );
-  }
-
-  // 获取该会话的消息
-  const key = `${domain}:${sessionId}`;
-  const messages = messageStore.get(key) || [];
-  
-  // 如果有新消息，返回最新的一条并从存储中删除
-  if (messages.length > 0) {
-    const message = messages.shift();
-    messageStore.set(key, messages);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message
-      }),
-      { 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    );
-  }
-
-  // 没有新消息时返回成功但不包含消息
-  return new Response(
-    JSON.stringify({ success: true }),
-    { 
-      headers: { 
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      }
-    }
-  );
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
@@ -121,17 +64,12 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // 将消息存储到 Map 中
-    const key = `${domain}:${sessionId}`;
-    const messages = messageStore.get(key) || [];
-    messages.push(replyMessage);
-    messageStore.set(key, messages);
-
-    console.log('Stored messages:', messageStore);
-
-    // 返回成功响应
+    // 直接返回消息给前端
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        message: replyMessage
+      }),
       { 
         headers: { 
           'Content-Type': 'application/json',

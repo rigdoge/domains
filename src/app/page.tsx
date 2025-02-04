@@ -28,71 +28,6 @@ export default function Home() {
   const [isSending, setIsSending] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
 
-  // 长轮询获取消息
-  useEffect(() => {
-    if (!isChatOpen) return;
-
-    const pollMessage = async () => {
-      try {
-        // 检查参数
-        console.log('Polling with params:', {
-          domain: domain.name,
-          sessionId: sessionId
-        });
-
-        // 构建查询参数
-        const params = new URLSearchParams();
-        if (domain?.name) {
-          params.append('domain', domain.name);
-        }
-        if (sessionId) {
-          params.append('sessionId', sessionId);
-        }
-
-        console.log('Request URL:', `/api/telegram-webhook?${params.toString()}`);
-
-        const response = await fetch(
-          `/api/telegram-webhook?${params.toString()}`,
-          {
-            method: 'GET',
-            headers: {
-              'Content-Type': 'application/json'
-            }
-          }
-        );
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Polling error:', errorData);
-          throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
-        }
-
-        const data = await response.json();
-        console.log('Polling response:', data);
-        
-        if (data.success && data.message) {
-          setMessages(prev => [...prev, {
-            text: data.message,
-            isUser: false
-          }]);
-        }
-
-        // 等待一段时间后再次轮询
-        setTimeout(pollMessage, 3000);
-      } catch (error) {
-        console.error('Error polling messages:', error);
-        // 如果出错，等待一段时间后重试
-        setTimeout(pollMessage, 3000);
-      }
-    };
-
-    pollMessage();
-
-    return () => {
-      // 清理函数，但在这里不需要做什么
-    };
-  }, [isChatOpen, domain.name, sessionId]);
-
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -207,6 +142,14 @@ export default function Home() {
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send message');
+      }
+
+      // 如果收到回复，添加到消息列表
+      if (data.success && data.message) {
+        setMessages(prev => [...prev, {
+          text: data.message,
+          isUser: false
+        }]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
