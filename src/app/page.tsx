@@ -155,12 +155,15 @@ export default function Home() {
         throw new Error(data.message || 'Failed to send message');
       }
 
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          text: 'Message received! We will reply to you soon.', 
-          isUser: false 
-        }]);
-      }, 1000);
+      // 只在第一条消息时发送自动回复
+      if (messages.length === 1) {
+        setTimeout(() => {
+          setMessages(prev => [...prev, { 
+            text: 'Message received! We will reply to you soon.', 
+            isUser: false 
+          }]);
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error sending message:', error);
       setMessages(prev => [...prev, { 
