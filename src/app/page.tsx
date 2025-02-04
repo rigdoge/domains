@@ -179,7 +179,7 @@ export default function Home() {
       <div className="container mx-auto px-4 py-16 max-w-3xl flex-grow flex flex-col">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-200">
-            Premium Domain
+            Domain Ventures
           </h1>
         </div>
 
