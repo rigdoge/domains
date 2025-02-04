@@ -1,5 +1,3 @@
-export { WebSocketConnection } from './websocket';
-
 export default {
   async fetch(request, env) {
     try {
@@ -11,6 +9,9 @@ export default {
         const module = await import(`.${url.pathname}.ts`);
         if (module.onRequestPost && request.method === 'POST') {
           return module.onRequestPost({ request, env });
+        }
+        if (module.onRequestGet && request.method === 'GET') {
+          return module.onRequestGet({ request, env });
         }
         return new Response('Not Found', { status: 404 });
       }
