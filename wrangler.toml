@@ -6,7 +6,9 @@ bucket = "./out"
 
 [build]
 command = "npm run build"
-output_dir = "./out"
+
+[build.output]
+pages_build_output_dir = "./out"
 
 [functions]
 directory = "./functions" 
