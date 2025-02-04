@@ -12,4 +12,9 @@ bindings = [
 
 [[migrations]]
 tag = "v1"
-new_classes = ["WebSocketConnection"] 
+new_classes = ["WebSocketConnection"]
+
+[[kv_namespaces]]
+binding = "MESSAGES"
+id = "YOUR_KV_ID"
+preview_id = "YOUR_PREVIEW_KV_ID" 

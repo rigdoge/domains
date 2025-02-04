@@ -25,6 +25,7 @@ export default function Home() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [lastMessageTime, setLastMessageTime] = useState<number>(0);
+  const [sessionId] = useState(() => Math.random().toString(36).substring(7));
 
   // 轮询获取新消息
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function Home() {
 
     const pollInterval = setInterval(async () => {
       try {
-        const response = await fetch(`/api/messages?domain=${domain.name}&since=${lastMessageTime}`);
+        const response = await fetch(`/api/messages?domain=${domain.name}&sessionId=${sessionId}&since=${lastMessageTime}`);
         const data = await response.json();
         
         if (data.messages && data.messages.length > 0) {
@@ -48,7 +49,7 @@ export default function Home() {
     }, 3000); // 每3秒轮询一次
 
     return () => clearInterval(pollInterval);
-  }, [isChatOpen, domain.name, lastMessageTime]);
+  }, [isChatOpen, domain.name, lastMessageTime, sessionId]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -104,6 +105,7 @@ export default function Home() {
       setIsSending(true);
       const initialMessage = `Domain Information:\n` +
         `Domain: ${domain.name}\n` +
+        `Session: ${sessionId}\n` +
         `Reference Price: $${domain.minBid.toLocaleString()}\n` +
         `Description: ${domain.description}\n` +
         `Status: Visitor opened chat window`;
@@ -116,6 +118,7 @@ export default function Home() {
         body: JSON.stringify({ 
           message: initialMessage,
           domain: domain.name,
+          sessionId,
           isInitial: true
         }),
       });
@@ -170,7 +173,8 @@ export default function Home() {
         },
         body: JSON.stringify({ 
           message: newMessage,
-          domain: domain.name
+          domain: domain.name,
+          sessionId
         }),
       });
 

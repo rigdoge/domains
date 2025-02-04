@@ -3,24 +3,26 @@ interface Env {
   TELEGRAM_CHAT_ID: string;
 }
 
-// 存储每个域名的消息
-const domainMessages = new Map<string, { message: string; timestamp: number }[]>();
+// 存储每个会话的消息
+const sessionMessages = new Map<string, { message: string; timestamp: number }[]>();
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   try {
     const url = new URL(context.request.url);
     const domain = url.searchParams.get('domain');
+    const sessionId = url.searchParams.get('sessionId');
     const since = parseInt(url.searchParams.get('since') || '0');
 
-    if (!domain) {
+    if (!domain || !sessionId) {
       return new Response(
-        JSON.stringify({ error: 'Domain is required' }),
+        JSON.stringify({ error: 'Domain and sessionId are required' }),
         { status: 400, headers: { 'Content-Type': 'application/json' } }
       );
     }
 
-    // 获取该域名的新消息
-    const messages = (domainMessages.get(domain) || [])
+    // 获取该会话的消息
+    const key = `${domain}:${sessionId}`;
+    const messages = (sessionMessages.get(key) || [])
       .filter(msg => msg.timestamp > since)
       .map(msg => msg.message);
 
@@ -38,11 +40,12 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 }
 
 // 添加消息的辅助函数
-export function addMessage(domain: string, message: string) {
-  const messages = domainMessages.get(domain) || [];
+export function addMessage(domain: string, sessionId: string, message: string) {
+  const key = `${domain}:${sessionId}`;
+  const messages = sessionMessages.get(key) || [];
   messages.push({
     message,
     timestamp: Date.now()
   });
-  domainMessages.set(domain, messages);
+  sessionMessages.set(key, messages);
 } 

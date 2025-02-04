@@ -6,11 +6,11 @@ interface Env {
 export async function onRequestPost(context: { request: Request; env: Env }) {
   try {
     const { request } = context;
-    const { message, domain, isInitial } = await request.json();
+    const { message, domain, sessionId, isInitial } = await request.json();
 
-    if (!message) {
+    if (!message || !sessionId) {
       return new Response(
-        JSON.stringify({ message: 'Please enter your message' }),
+        JSON.stringify({ message: 'Please enter your message and session ID' }),
         { 
           status: 400,
           headers: { 'Content-Type': 'application/json' }
@@ -21,7 +21,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // Send message to Telegram
     const notification = isInitial 
       ? message 
-      : `New message from visitor:\n\nDomain: ${domain}\nMessage: ${message}\nTime: ${new Date().toISOString()}`;
+      : `New message from visitor:\n\nDomain: ${domain}\nSession: ${sessionId}\nMessage: ${message}\nTime: ${new Date().toISOString()}`;
     
     const telegramResponse = await fetch(`https://api.telegram.org/bot${context.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',

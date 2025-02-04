@@ -26,18 +26,21 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       return new Response('OK', { status: 200 });
     }
 
-    // 从原始消息中提取域名信息
+    // 从原始消息中提取域名和会话ID信息
     const originalMessage = update.message.reply_to_message.text;
     const domainMatch = originalMessage.match(/Domain: ([^\n]+)/);
-    if (!domainMatch) {
+    const sessionMatch = originalMessage.match(/Session: ([^\n]+)/);
+    
+    if (!domainMatch || !sessionMatch) {
       return new Response('OK', { status: 200 });
     }
 
     const domain = domainMatch[1];
+    const sessionId = sessionMatch[1];
     const replyMessage = update.message.text;
 
     // 添加消息到存储
-    addMessage(domain, replyMessage);
+    addMessage(domain, sessionId, replyMessage);
 
     return new Response('OK', { status: 200 });
   } catch (error) {
