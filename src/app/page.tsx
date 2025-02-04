@@ -39,7 +39,6 @@ export default function Home() {
           },
           body: JSON.stringify({
             message: {
-              text: 'poll',
               chat: { id: sessionId },
               reply_to_message: {
                 text: `Domain: ${domain.name}\nSession: ${sessionId}`
@@ -57,8 +56,8 @@ export default function Home() {
           }]);
         }
 
-        // 立即开始下一次轮询
-        pollMessage();
+        // 等待一段时间后再次轮询
+        setTimeout(pollMessage, 3000);
       } catch (error) {
         console.error('Error polling messages:', error);
         // 如果出错，等待一段时间后重试

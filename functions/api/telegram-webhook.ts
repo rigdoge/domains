@@ -35,6 +35,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const update: TelegramUpdate = await context.request.json();
     console.log('Received update:', JSON.stringify(update));
     
+    // 如果是轮询请求（没有消息文本），返回空响应
+    if (!update.message?.text) {
+      return new Response(
+        JSON.stringify({ success: true }),
+        { 
+          headers: { 
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*'
+          }
+        }
+      );
+    }
+    
     // 只处理回复的消息
     if (!update.message?.reply_to_message) {
       console.log('Skipping non-reply message');
