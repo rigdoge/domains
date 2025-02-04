@@ -10,11 +10,14 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
   images: {
-    domains: [],
+    domains: ['domains.facesome.com'],
     unoptimized: true,
   },
   output: 'export',
   distDir: 'out',
+  experimental: {
+    optimizeCss: true,
+  },
 };
 
 module.exports = withPWA(nextConfig); 
