@@ -32,8 +32,14 @@ export default function Home() {
 
     const pollMessage = async () => {
       try {
+        // 构建查询参数
+        const params = new URLSearchParams({
+          domain: domain.name,
+          sessionId: sessionId
+        });
+
         const response = await fetch(
-          `/api/telegram-webhook?domain=${encodeURIComponent(domain.name)}&sessionId=${encodeURIComponent(sessionId)}`,
+          `/api/telegram-webhook?${params.toString()}`,
           {
             method: 'GET',
             headers: {
