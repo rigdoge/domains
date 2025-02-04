@@ -18,35 +18,53 @@ export default {
           });
         }
 
+        // 获取 API 路径
+        const apiPath = url.pathname.replace('/api/', '');
+        
         // 根据路径调用相应的处理函数
-        const modulePath = `.${url.pathname}.ts`;
-        try {
-          const module = await import(modulePath);
-          
-          // POST 请求处理
-          if (request.method === 'POST' && module.onRequestPost) {
-            return await module.onRequestPost({ request, env });
-          }
-          
-          // GET 请求处理
-          if (request.method === 'GET' && module.onRequestGet) {
-            return await module.onRequestGet({ request, env });
-          }
-
-          return new Response(`Method ${request.method} not allowed`, { 
-            status: 405,
-            headers: {
-              'Allow': 'GET, POST, OPTIONS',
-              'Content-Type': 'text/plain'
+        switch (apiPath) {
+          case 'bid':
+            if (request.method === 'POST') {
+              const { onRequestPost } = await import('./api/bid.ts');
+              return await onRequestPost({ request, env });
             }
-          });
-        } catch (error) {
-          console.error(`Error loading module ${modulePath}:`, error);
-          return new Response('Not Found', { 
-            status: 404,
-            headers: { 'Content-Type': 'text/plain' }
-          });
+            break;
+
+          case 'chat':
+            if (request.method === 'POST') {
+              const { onRequestPost } = await import('./api/chat.ts');
+              return await onRequestPost({ request, env });
+            }
+            break;
+
+          case 'telegram-webhook':
+            if (request.method === 'POST') {
+              const { onRequestPost } = await import('./api/telegram-webhook.ts');
+              return await onRequestPost({ request, env });
+            }
+            break;
+
+          case 'setup-webhook':
+            if (request.method === 'POST') {
+              const { onRequestPost } = await import('./api/setup-webhook.ts');
+              return await onRequestPost({ request, env });
+            }
+            break;
+
+          default:
+            return new Response('Not Found', { 
+              status: 404,
+              headers: { 'Content-Type': 'text/plain' }
+            });
         }
+
+        return new Response(`Method ${request.method} not allowed`, { 
+          status: 405,
+          headers: {
+            'Allow': 'POST, OPTIONS',
+            'Content-Type': 'text/plain'
+          }
+        });
       }
 
       // 处理静态文件
