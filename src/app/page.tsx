@@ -14,7 +14,7 @@ function getDomainInfo(): DomainInfo {
 
 export default function Home() {
   const domain = getDomainInfo();
-  const [bidAmount, setBidAmount] = useState<string>('');
+  const [bidAmount, setBidAmount] = useState<string>(domain.minBid.toString());
   const [contact, setContact] = useState<string>('');
   const [isBidding, setIsBidding] = useState(false);
   const [error, setError] = useState<string>('');
@@ -212,9 +212,10 @@ export default function Home() {
                     type="number"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
-                    placeholder="Enter your bid amount"
-                    className="w-full pl-8 pr-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                    step="1"
+                    placeholder={`${domain.minBid.toLocaleString()}`}
+                    className="w-full pl-8 pr-4 py-2 rounded-lg border dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-emerald-500 dark:focus:ring-emerald-400 disabled:bg-gray-100 dark:disabled:bg-gray-600"
+                    min={domain.minBid}
+                    step="1000"
                   />
                 </div>
                 <button
