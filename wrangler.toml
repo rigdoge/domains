@@ -1,20 +1,12 @@
 name = "domains"
-main = "./functions/_worker.js"
 compatibility_date = "2024-02-04"
 
 [site]
 bucket = "./out"
 
-[durable_objects]
-bindings = [
-  { name = "WEBSOCKET", class_name = "WebSocketConnection" }
-]
+[build]
+command = "npm run build"
+output_dir = "./out"
 
-[[migrations]]
-tag = "v1"
-new_classes = ["WebSocketConnection"]
-
-[[kv_namespaces]]
-binding = "MESSAGES"
-id = "YOUR_KV_ID"
-preview_id = "YOUR_PREVIEW_KV_ID" 
+[functions]
+directory = "./functions" 
