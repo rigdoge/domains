@@ -20,6 +20,9 @@ interface WebSocketPair {
 
 declare function WebSocketPair(): WebSocketPair;
 
+// 存储 WebSocket 连接
+const connections = new Map<string, WebSocket>();
+
 export async function onRequest(context: { request: Request; env: Env }) {
   const upgradeHeader = context.request.headers.get('Upgrade');
   if (!upgradeHeader || upgradeHeader !== 'websocket') {
@@ -36,6 +39,9 @@ export async function onRequest(context: { request: Request; env: Env }) {
   const url = new URL(context.request.url);
   const domain = url.searchParams.get('domain');
   if (domain) {
+    // 存储连接
+    // @ts-ignore - Cloudflare Workers specific API
+    connections.set(domain, server);
     // @ts-ignore - Cloudflare Workers specific API
     server.send(JSON.stringify({ type: 'connected', domain }));
   }
@@ -50,9 +56,19 @@ export async function onRequest(context: { request: Request; env: Env }) {
     }
   });
 
+  // @ts-ignore - Cloudflare Workers specific API
+  server.addEventListener('close', () => {
+    if (domain) {
+      connections.delete(domain);
+    }
+  });
+
   return new Response(null, {
     status: 101,
     // @ts-ignore - Cloudflare Workers specific API
     webSocket: client,
   });
-} 
+}
+
+// 导出 connections 供其他模块使用
+export { connections }; 

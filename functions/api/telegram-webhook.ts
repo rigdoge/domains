@@ -1,3 +1,5 @@
+import { connections } from './ws';
+
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
@@ -34,21 +36,16 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const domain = domainMatch[1];
     const replyMessage = update.message.text;
 
-    // 创建 WebSocket 连接
-    // @ts-ignore - Cloudflare Workers specific API
-    const pair = new WebSocketPair();
-    const [client, server] = Object.values(pair);
-
-    // @ts-ignore - Cloudflare Workers specific API
-    server.accept();
-
-    // 发送回复消息
-    // @ts-ignore - Cloudflare Workers specific API
-    server.send(JSON.stringify({
-      type: 'telegram_reply',
-      domain,
-      message: replyMessage
-    }));
+    // 获取对应域名的 WebSocket 连接
+    const connection = connections.get(domain);
+    if (connection) {
+      // @ts-ignore - Cloudflare Workers specific API
+      connection.send(JSON.stringify({
+        type: 'telegram_reply',
+        domain,
+        message: replyMessage
+      }));
+    }
 
     return new Response('OK', { status: 200 });
   } catch (error) {

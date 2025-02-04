@@ -28,7 +28,7 @@ export default function Home() {
   // WebSocket 连接
   useEffect(() => {
     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/ws`);
+    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/ws?domain=${domain.name}`);
 
     ws.onmessage = (event) => {
       try {
