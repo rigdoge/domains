@@ -11,8 +11,9 @@ const nextConfig = {
   swcMinify: true,
   images: {
     domains: [],
+    unoptimized: true,
   },
-  output: 'standalone',
+  output: 'export',
 };
 
 module.exports = withPWA(nextConfig); 
