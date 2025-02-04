@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { domains, DomainInfo } from '@/config/domain';
 
 function getDomainInfo(): DomainInfo {
@@ -24,6 +24,27 @@ export default function Home() {
   const [messages, setMessages] = useState<{text: string; isUser: boolean}[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // WebSocket 连接
+  useEffect(() => {
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/ws`);
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.type === 'telegram_reply' && data.domain === domain.name) {
+          setMessages(prev => [...prev, { text: data.message, isUser: false }]);
+        }
+      } catch (error) {
+        console.error('Error parsing WebSocket message:', error);
+      }
+    };
+
+    return () => {
+      ws.close();
+    };
+  }, [domain.name]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
