@@ -28,6 +28,37 @@ export async function onRequestOptions() {
   });
 }
 
+// 处理 GET 请求，用于轮询
+export async function onRequestGet(context: { request: Request; env: Env }) {
+  const url = new URL(context.request.url);
+  const domain = url.searchParams.get('domain');
+  const sessionId = url.searchParams.get('sessionId');
+
+  if (!domain || !sessionId) {
+    return new Response(
+      JSON.stringify({ error: 'Missing domain or sessionId' }),
+      { 
+        status: 400,
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
+  }
+
+  // TODO: 从某个存储中获取消息
+  return new Response(
+    JSON.stringify({ success: true }),
+    { 
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
+    }
+  );
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }) {
   console.log('Received webhook request');
   
@@ -35,25 +66,6 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     // 解析请求体
     const update: TelegramUpdate = await context.request.json();
     console.log('Received update:', JSON.stringify(update));
-    
-    // 如果是轮询请求，检查域名和会话ID
-    if (!update.message?.text && update.message?.reply_to_message?.text) {
-      const originalMessage = update.message.reply_to_message.text;
-      const domainMatch = originalMessage.match(/Domain: ([^\n]+)/);
-      const sessionMatch = originalMessage.match(/Session: ([^\n]+)/);
-      
-      if (domainMatch && sessionMatch) {
-        return new Response(
-          JSON.stringify({ success: true }),
-          { 
-            headers: { 
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': '*'
-            }
-          }
-        );
-      }
-    }
     
     // 只处理回复的消息
     if (!update.message?.reply_to_message) {
@@ -82,6 +94,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       sessionId,
       replyMessage
     });
+
+    // TODO: 将消息存储到某个地方
 
     // 返回消息给前端
     return new Response(

@@ -32,21 +32,15 @@ export default function Home() {
 
     const pollMessage = async () => {
       try {
-        const response = await fetch(`/api/telegram-webhook`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            message: {
-              chat: { id: sessionId },
-              reply_to_message: {
-                text: `Domain: ${domain.name}\nSession: ${sessionId}`
-              },
-              text: ''
+        const response = await fetch(
+          `/api/telegram-webhook?domain=${encodeURIComponent(domain.name)}&sessionId=${encodeURIComponent(sessionId)}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json'
             }
-          })
-        });
+          }
+        );
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
