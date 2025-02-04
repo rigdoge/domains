@@ -14,6 +14,8 @@ const nextConfig = {
     unoptimized: true,
   },
   output: 'export',
+  rewrites: async () => [],
+  trailingSlash: true,
 };
 
 module.exports = withPWA(nextConfig); 
