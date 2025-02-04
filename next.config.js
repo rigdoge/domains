@@ -12,6 +12,7 @@ const nextConfig = {
   images: {
     domains: [],
   },
+  output: 'standalone',
 };
 
 module.exports = withPWA(nextConfig); 
