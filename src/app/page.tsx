@@ -175,8 +175,8 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-      <div className="container mx-auto px-4 py-16 max-w-3xl">
+    <main className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="container mx-auto px-4 py-16 max-w-3xl flex-grow">
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-emerald-600 to-emerald-400 dark:from-emerald-400 dark:to-emerald-200">
             Premium Domain
@@ -282,11 +282,13 @@ export default function Home() {
             )}
           </div>
         </div>
-
-        <footer className="mt-16 text-center text-gray-600 dark:text-gray-400">
-          <p>© {new Date().getFullYear()} <a href="https://facesome.com" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Facesome.com</a> All rights reserved.</p>
-        </footer>
       </div>
+
+      <footer className="w-full py-6 mt-auto border-t border-gray-100 dark:border-gray-800 bg-white/70 dark:bg-gray-800/70 backdrop-blur-sm">
+        <div className="container mx-auto px-4 text-center text-gray-600 dark:text-gray-400">
+          <p>© {new Date().getFullYear()} <a href="https://facesome.com" target="_blank" rel="noopener noreferrer" className="hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors">Facesome.com</a> All rights reserved.</p>
+        </div>
+      </footer>
     </main>
   );
 } 
