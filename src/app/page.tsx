@@ -6,14 +6,20 @@ import { domains, DomainInfo } from '@/config/domain';
 function getDomainInfo(): DomainInfo {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    console.log('Current hostname:', hostname);
     const domainKey = hostname.replace('www.', '').split('.')[0];
-    return domains[domainKey] || domains.example;
+    console.log('Domain key:', domainKey);
+    const domainInfo = domains[domainKey] || domains.example;
+    console.log('Domain info:', domainInfo);
+    return domainInfo;
   }
+  console.log('Using example domain (server-side)');
   return domains.example;
 }
 
 export default function Home() {
   const domain = getDomainInfo();
+  console.log('Initial domain:', domain);
   const [bidAmount, setBidAmount] = useState<string>(domain.minBid.toString());
   const [contact, setContact] = useState<string>('');
   const [isBidding, setIsBidding] = useState(false);
@@ -32,11 +38,22 @@ export default function Home() {
 
     const pollMessage = async () => {
       try {
-        // 构建查询参数
-        const params = new URLSearchParams({
+        // 检查参数
+        console.log('Polling with params:', {
           domain: domain.name,
           sessionId: sessionId
         });
+
+        // 构建查询参数
+        const params = new URLSearchParams();
+        if (domain?.name) {
+          params.append('domain', domain.name);
+        }
+        if (sessionId) {
+          params.append('sessionId', sessionId);
+        }
+
+        console.log('Request URL:', `/api/telegram-webhook?${params.toString()}`);
 
         const response = await fetch(
           `/api/telegram-webhook?${params.toString()}`,
@@ -49,10 +66,13 @@ export default function Home() {
         );
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json();
+          console.error('Polling error:', errorData);
+          throw new Error(`HTTP error! status: ${response.status}, message: ${JSON.stringify(errorData)}`);
         }
 
         const data = await response.json();
+        console.log('Polling response:', data);
         
         if (data.success && data.message) {
           setMessages(prev => [...prev, {
