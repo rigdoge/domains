@@ -42,10 +42,15 @@ export default function Home() {
               chat: { id: sessionId },
               reply_to_message: {
                 text: `Domain: ${domain.name}\nSession: ${sessionId}`
-              }
+              },
+              text: ''
             }
           })
         });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         

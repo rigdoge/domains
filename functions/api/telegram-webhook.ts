@@ -15,37 +15,44 @@ interface TelegramUpdate {
   };
 }
 
+// 处理 CORS 预检请求
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
 export async function onRequestPost(context: { request: Request; env: Env }) {
   console.log('Received webhook request');
   
   try {
-    // 验证请求方法
-    if (context.request.method !== 'POST') {
-      console.error('Invalid request method:', context.request.method);
-      return new Response('Method not allowed', { 
-        status: 405,
-        headers: {
-          'Allow': 'POST',
-          'Content-Type': 'text/plain'
-        }
-      });
-    }
-
     // 解析请求体
     const update: TelegramUpdate = await context.request.json();
     console.log('Received update:', JSON.stringify(update));
     
-    // 如果是轮询请求（没有消息文本），返回空响应
-    if (!update.message?.text) {
-      return new Response(
-        JSON.stringify({ success: true }),
-        { 
-          headers: { 
-            'Content-Type': 'application/json',
-            'Access-Control-Allow-Origin': '*'
+    // 如果是轮询请求，检查域名和会话ID
+    if (!update.message?.text && update.message?.reply_to_message?.text) {
+      const originalMessage = update.message.reply_to_message.text;
+      const domainMatch = originalMessage.match(/Domain: ([^\n]+)/);
+      const sessionMatch = originalMessage.match(/Session: ([^\n]+)/);
+      
+      if (domainMatch && sessionMatch) {
+        return new Response(
+          JSON.stringify({ success: true }),
+          { 
+            headers: { 
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*'
+            }
           }
-        }
-      );
+        );
+      }
     }
     
     // 只处理回复的消息
@@ -76,7 +83,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // 直接返回消息给前端
+    // 返回消息给前端
     return new Response(
       JSON.stringify({ 
         success: true,
@@ -95,7 +102,10 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), 
       { 
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       }
     );
   }
