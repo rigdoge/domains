@@ -65,11 +65,19 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // 添加消息到存储
-    addMessage(domain, sessionId, replyMessage);
-    console.log('Message added to storage');
-
-    return new Response('OK', { status: 200 });
+    // 直接返回消息给前端
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message: replyMessage
+      }),
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
   } catch (error) {
     console.error('Error handling telegram webhook:', error);
     return new Response(

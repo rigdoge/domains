@@ -11,4 +11,9 @@ command = "npm run build"
 pages_build_output_dir = "./out"
 
 [functions]
-directory = "./functions" 
+directory = "./functions"
+
+[[kv_namespaces]]
+binding = "MESSAGES"
+id = "YOUR_KV_ID"
+preview_id = "YOUR_PREVIEW_KV_ID" 

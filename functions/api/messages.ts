@@ -1,10 +1,8 @@
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
+  MESSAGES: KVNamespace;
 }
-
-// 存储每个会话的消息
-const sessionMessages = new Map<string, { message: string; timestamp: number }[]>();
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
   console.log('Received message request');
@@ -29,12 +27,13 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const key = `${domain}:${sessionId}`;
     console.log('Fetching messages for key:', key);
     
-    const allMessages = sessionMessages.get(key) || [];
+    const messagesStr = await context.env.MESSAGES.get(key);
+    const allMessages = messagesStr ? JSON.parse(messagesStr) : [];
     console.log('All messages:', allMessages);
     
     const messages = allMessages
-      .filter(msg => msg.timestamp > since)
-      .map(msg => msg.message);
+      .filter((msg: { timestamp: number }) => msg.timestamp > since)
+      .map((msg: { message: string }) => msg.message);
     
     console.log('Filtered messages:', messages);
 
@@ -57,20 +56,31 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 }
 
 // 添加消息的辅助函数
-export function addMessage(domain: string, sessionId: string, message: string) {
+export async function addMessage(env: Env, domain: string, sessionId: string, message: string) {
   console.log('Adding message:', { domain, sessionId, message });
   
-  const key = `${domain}:${sessionId}`;
-  const messages = sessionMessages.get(key) || [];
-  
-  const newMessage = {
-    message,
-    timestamp: Date.now()
-  };
-  
-  messages.push(newMessage);
-  sessionMessages.set(key, messages);
-  
-  console.log('Updated messages for key:', key, messages);
-  console.log('All sessions:', Array.from(sessionMessages.keys()));
+  try {
+    const key = `${domain}:${sessionId}`;
+    const messagesStr = await env.MESSAGES.get(key);
+    const messages = messagesStr ? JSON.parse(messagesStr) : [];
+    
+    const newMessage = {
+      message,
+      timestamp: Date.now()
+    };
+    
+    messages.push(newMessage);
+    
+    // 只保留最近的 100 条消息
+    if (messages.length > 100) {
+      messages.shift();
+    }
+    
+    await env.MESSAGES.put(key, JSON.stringify(messages));
+    
+    console.log('Updated messages for key:', key, messages);
+  } catch (error) {
+    console.error('Error adding message:', error);
+    throw error;
+  }
 } 

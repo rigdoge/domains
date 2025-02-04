@@ -24,32 +24,54 @@ export default function Home() {
   const [messages, setMessages] = useState<{text: string; isUser: boolean}[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
 
-  // 轮询获取新消息
+  // 长轮询获取消息
   useEffect(() => {
     if (!isChatOpen) return;
 
-    const pollInterval = setInterval(async () => {
+    const pollMessage = async () => {
       try {
-        const response = await fetch(`/api/messages?domain=${domain.name}&sessionId=${sessionId}&since=${lastMessageTime}`);
+        const response = await fetch(`/api/telegram-webhook`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            message: {
+              text: 'poll',
+              chat: { id: sessionId },
+              reply_to_message: {
+                text: `Domain: ${domain.name}\nSession: ${sessionId}`
+              }
+            }
+          })
+        });
+
         const data = await response.json();
         
-        if (data.messages && data.messages.length > 0) {
-          setMessages(prev => [...prev, ...data.messages.map((msg: string) => ({
-            text: msg,
+        if (data.success && data.message) {
+          setMessages(prev => [...prev, {
+            text: data.message,
             isUser: false
-          }))]);
-          setLastMessageTime(Date.now());
+          }]);
         }
+
+        // 立即开始下一次轮询
+        pollMessage();
       } catch (error) {
         console.error('Error polling messages:', error);
+        // 如果出错，等待一段时间后重试
+        setTimeout(pollMessage, 3000);
       }
-    }, 3000); // 每3秒轮询一次
+    };
 
-    return () => clearInterval(pollInterval);
-  }, [isChatOpen, domain.name, lastMessageTime, sessionId]);
+    pollMessage();
+
+    return () => {
+      // 清理函数，但在这里不需要做什么
+    };
+  }, [isChatOpen, domain.name, sessionId]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
