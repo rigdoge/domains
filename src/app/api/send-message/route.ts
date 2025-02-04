@@ -1,19 +1,20 @@
 import { NextResponse } from 'next/server';
-import { sendTelegramMessage } from '@/utils/telegram';
 
 export async function POST(request: Request) {
   try {
-    const { domain, amount } = await request.json();
+    const { message, domain, isInitial } = await request.json();
 
-    if (!domain || !amount) {
+    if (!message) {
       return NextResponse.json(
-        { message: 'Please enter bid amount' },
+        { message: 'Please enter your message' },
         { status: 400 }
       );
     }
 
-    // Send notification to Telegram
-    const message = `New bid received!\n\nDomain: ${domain}\nBid Amount: $${amount.toLocaleString()}\nTime: ${new Date().toLocaleString()}`;
+    // Send message to Telegram
+    const notification = isInitial 
+      ? message 
+      : `New message from visitor:\n\nDomain: ${domain}\nMessage: ${message}\nTime: ${new Date().toLocaleString()}`;
     
     await fetch(`https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -22,13 +23,13 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         chat_id: process.env.TELEGRAM_CHAT_ID,
-        text: message,
+        text: notification,
       }),
     });
 
-    return NextResponse.json({ message: 'Bid submitted successfully' });
+    return NextResponse.json({ message: 'Message sent successfully' });
   } catch (error) {
-    console.error('Error sending bid notification:', error);
+    console.error('Error sending chat message:', error);
     return NextResponse.json(
       { message: 'Server error, please try again later' },
       { status: 500 }

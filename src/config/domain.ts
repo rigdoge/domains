@@ -1,7 +1,7 @@
 export interface DomainInfo {
   name: string;
-  minBid: number;  // 最低出价
-  currentBid?: number;  // 当前最高出价
+  minBid: number;  // Reference price
+  currentBid?: number;  // Current highest bid
   description: string;
 }
 
@@ -13,7 +13,7 @@ export const domains: Record<string, DomainInfo> = {
   },
   example: {
     name: 'tqdi.com',
-    minBid: 9999,
+    minBid: 999,
     description: 'Premium domain name available for purchase',
   },
   // Add more domains as needed
