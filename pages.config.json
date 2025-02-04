@@ -1,0 +1,14 @@
+{
+  "name": "domain-ventures",
+  "build": {
+    "command": "npm run build",
+    "output": ".next",
+    "environment": {
+      "NODE_VERSION": "18"
+    }
+  },
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "status": 200, "dest": "/index.html" }
+  ]
+} 
