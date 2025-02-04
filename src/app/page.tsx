@@ -24,27 +24,31 @@ export default function Home() {
   const [messages, setMessages] = useState<{text: string; isUser: boolean}[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
 
-  // WebSocket 连接
+  // 轮询获取新消息
   useEffect(() => {
-    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${wsProtocol}//${window.location.host}/api/ws?domain=${domain.name}`);
+    if (!isChatOpen) return;
 
-    ws.onmessage = (event) => {
+    const pollInterval = setInterval(async () => {
       try {
-        const data = JSON.parse(event.data);
-        if (data.type === 'telegram_reply' && data.domain === domain.name) {
-          setMessages(prev => [...prev, { text: data.message, isUser: false }]);
+        const response = await fetch(`/api/messages?domain=${domain.name}&since=${lastMessageTime}`);
+        const data = await response.json();
+        
+        if (data.messages && data.messages.length > 0) {
+          setMessages(prev => [...prev, ...data.messages.map((msg: string) => ({
+            text: msg,
+            isUser: false
+          }))]);
+          setLastMessageTime(Date.now());
         }
       } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
+        console.error('Error polling messages:', error);
       }
-    };
+    }, 3000); // 每3秒轮询一次
 
-    return () => {
-      ws.close();
-    };
-  }, [domain.name]);
+    return () => clearInterval(pollInterval);
+  }, [isChatOpen, domain.name, lastMessageTime]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

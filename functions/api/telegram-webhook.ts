@@ -1,4 +1,4 @@
-import { connections } from './ws';
+import { addMessage } from './messages';
 
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
@@ -36,16 +36,8 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const domain = domainMatch[1];
     const replyMessage = update.message.text;
 
-    // 获取对应域名的 WebSocket 连接
-    const connection = connections.get(domain);
-    if (connection) {
-      // @ts-ignore - Cloudflare Workers specific API
-      connection.send(JSON.stringify({
-        type: 'telegram_reply',
-        domain,
-        message: replyMessage
-      }));
-    }
+    // 添加消息到存储
+    addMessage(domain, replyMessage);
 
     return new Response('OK', { status: 200 });
   } catch (error) {

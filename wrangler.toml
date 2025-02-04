@@ -1,6 +1,15 @@
-name = "domain-ventures"
+name = "domains"
 main = "./functions/_worker.js"
-compatibility_date = "2025-02-04"
+compatibility_date = "2024-02-04"
 
 [site]
-bucket = "./out" 
+bucket = "./out"
+
+[durable_objects]
+bindings = [
+  { name = "WEBSOCKET", class_name = "WebSocketConnection" }
+]
+
+[[migrations]]
+tag = "v1"
+new_classes = ["WebSocketConnection"] 
