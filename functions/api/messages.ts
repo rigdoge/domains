@@ -13,9 +13,9 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       throw new Error('Missing domain parameter');
     }
 
-    // 获取 Telegram 更新
+    // 获取 Telegram 更新，使用 offset 参数获取所有新消息
     const response = await fetch(
-      `https://api.telegram.org/bot${context.env.TELEGRAM_BOT_TOKEN}/getUpdates?offset=-1&limit=10`,
+      `https://api.telegram.org/bot${context.env.TELEGRAM_BOT_TOKEN}/getUpdates?offset=-100&limit=100`,
       {
         method: 'GET',
       }
@@ -31,15 +31,22 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const messages = data.result
       .filter((update: any) => {
         const message = update.message;
+        // 检查是否是回复消息，且回复的原始消息包含当前域名
         if (!message?.reply_to_message?.text) return false;
-        return message.reply_to_message.text.includes(`Domain: ${domain}`);
+        const originalMessage = message.reply_to_message.text;
+        return originalMessage.includes(`Domain: ${domain}`);
       })
       .map((update: any) => ({
         text: update.message.text,
         isUser: false,
         timestamp: update.message.date * 1000 // 转换为毫秒
       }))
-      .filter((msg: any) => !since || msg.timestamp > parseInt(since));
+      // 只返回指定时间之后的消息
+      .filter((msg: any) => !since || msg.timestamp > parseInt(since))
+      // 按时间戳排序
+      .sort((a: any, b: any) => a.timestamp - b.timestamp);
+
+    console.log('Filtered messages:', messages);
 
     return new Response(
       JSON.stringify({ success: true, messages }),
