@@ -40,6 +40,13 @@ export default {
             }
             break;
 
+          case 'messages':
+            if (request.method === 'GET') {
+              const { onRequestGet } = await import('./api/messages.ts');
+              return await onRequestGet({ request, env });
+            }
+            break;
+
           case 'telegram-webhook':
             if (request.method === 'POST') {
               const { onRequestPost } = await import('./api/telegram-webhook.ts');

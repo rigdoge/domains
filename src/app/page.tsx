@@ -23,10 +23,38 @@ export default function Home() {
   const [success, setSuccess] = useState<string>('');
 
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{text: string; isUser: boolean}[]>([]);
+  const [messages, setMessages] = useState<{text: string; isUser: boolean; timestamp?: number}[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
+  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
+
+  // 轮询获取新消息
+  useEffect(() => {
+    if (!isChatOpen) return;
+
+    const pollMessages = async () => {
+      try {
+        const response = await fetch(`/api/messages?domain=${domain.name}&since=${lastMessageTime}`);
+        const data = await response.json();
+
+        if (data.success && data.messages.length > 0) {
+          setMessages(prev => [...prev, ...data.messages]);
+          // 更新最后消息时间
+          const latestMessage = data.messages.reduce((latest: any, current: any) => 
+            latest.timestamp > current.timestamp ? latest : current
+          );
+          setLastMessageTime(latestMessage.timestamp);
+        }
+      } catch (error) {
+        console.error('Error polling messages:', error);
+      }
+    };
+
+    const intervalId = setInterval(pollMessages, 3000); // 每3秒轮询一次
+
+    return () => clearInterval(intervalId);
+  }, [isChatOpen, domain.name, lastMessageTime]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
