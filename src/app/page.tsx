@@ -112,12 +112,8 @@ export default function Home() {
 
       setSuccess('Bid submitted successfully!');
       setBidAmount('');
-      // Open chat window and show message
+      // Open chat window
       setIsChatOpen(true);
-      setMessages(prev => [...prev, {
-        text: `Thank you for your bid! Your offer of $${amount.toLocaleString()} has been received. Please leave your contact information (email/phone) and any additional message for us.`,
-        isUser: false
-      }]);
     } catch (err: any) {
       setError(err.message || 'Submission of bid failed');
     } finally {
@@ -154,21 +150,8 @@ export default function Home() {
       if (!response.ok) {
         throw new Error(data.message || 'Failed to send message');
       }
-
-      setMessages([
-        { 
-          text: `Welcome! Interested in ${domain.name}? You can place a bid or leave us a message. We will get back to you as soon as possible.`, 
-          isUser: false 
-        }
-      ]);
     } catch (error) {
       console.error('Error sending initial message:', error);
-      setMessages([
-        { 
-          text: 'Welcome! We are happy to serve you.', 
-          isUser: false 
-        }
-      ]);
     } finally {
       setIsSending(false);
     }
