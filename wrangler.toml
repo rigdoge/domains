@@ -6,6 +6,7 @@ bucket = "./out"
 
 [build]
 command = "npm run build"
+pages_build_output_dir = "out"
 
 [build.output]
 pages_build_output_dir = "./out"
@@ -16,4 +17,7 @@ directory = "./functions"
 [[kv_namespaces]]
 binding = "MESSAGES"
 id = "YOUR_KV_ID"
-preview_id = "YOUR_PREVIEW_KV_ID" 
+preview_id = "YOUR_PREVIEW_KV_ID"
+
+[build.upload]
+format = "service-worker" 
