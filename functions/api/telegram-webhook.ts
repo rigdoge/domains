@@ -15,6 +15,9 @@ interface TelegramUpdate {
   };
 }
 
+// 存储消息的 Map
+const messageStore = new Map<string, string[]>();
+
 // 处理 CORS 预检请求
 export async function onRequestOptions() {
   return new Response(null, {
@@ -47,7 +50,30 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     );
   }
 
-  // TODO: 从某个存储中获取消息
+  // 获取该会话的消息
+  const key = `${domain}:${sessionId}`;
+  const messages = messageStore.get(key) || [];
+  
+  // 如果有新消息，返回最新的一条并从存储中删除
+  if (messages.length > 0) {
+    const message = messages.shift();
+    messageStore.set(key, messages);
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true,
+        message
+      }),
+      { 
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      }
+    );
+  }
+
+  // 没有新消息时返回成功但不包含消息
   return new Response(
     JSON.stringify({ success: true }),
     { 
@@ -95,14 +121,17 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // TODO: 将消息存储到某个地方
+    // 将消息存储到 Map 中
+    const key = `${domain}:${sessionId}`;
+    const messages = messageStore.get(key) || [];
+    messages.push(replyMessage);
+    messageStore.set(key, messages);
 
-    // 返回消息给前端
+    console.log('Stored messages:', messageStore);
+
+    // 返回成功响应
     return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: replyMessage
-      }),
+      JSON.stringify({ success: true }),
       { 
         headers: { 
           'Content-Type': 'application/json',

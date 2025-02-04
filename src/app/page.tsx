@@ -4,17 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { domains, DomainInfo } from '@/config/domain';
 
 function getDomainInfo(): DomainInfo {
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    console.log('Current hostname:', hostname);
-    const domainKey = hostname.replace('www.', '').split('.')[0];
-    console.log('Domain key:', domainKey);
-    const domainInfo = domains[domainKey] || domains.example;
-    console.log('Domain info:', domainInfo);
-    return domainInfo;
-  }
-  console.log('Using example domain (server-side)');
-  return domains.example;
+  // 不再从 hostname 获取域名信息
+  // 而是从 URL 参数或者其他方式获取要销售的域名
+  return {
+    name: 'tqdi.com',
+    minBid: 999,
+    description: 'Premium domain name available for purchase'
+  };
 }
 
 export default function Home() {
