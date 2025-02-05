@@ -26,6 +26,47 @@ export default function Home() {
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
   const [lastMessageTime, setLastMessageTime] = useState<number>(0);
 
+  // 注册推送服务
+  useEffect(() => {
+    async function registerPush() {
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window) {
+          const registration = await navigator.serviceWorker.ready;
+          
+          // 请求通知权限
+          const permission = await Notification.requestPermission();
+          if (permission !== 'granted') {
+            console.log('Notification permission denied');
+            return;
+          }
+
+          // 获取推送订阅
+          const subscription = await registration.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: 'BIxxVmoXcHlWCbjsx70Ko79302Zq6giIE6G5JnjhAVLuOwaKMDqdA7B66cno222VhlhZeOqmUlZJkziZxe387d4'
+          });
+
+          // 发送订阅信息到服务器
+          await fetch('/api/push-subscription', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              subscription,
+              domain: domain.name,
+              sessionId
+            }),
+          });
+        }
+      } catch (error) {
+        console.error('Failed to register push:', error);
+      }
+    }
+
+    registerPush();
+  }, [domain.name, sessionId]);
+
   // 轮询获取新消息
   useEffect(() => {
     if (!isChatOpen) return;

@@ -2,6 +2,7 @@ interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
   MESSAGES: KVNamespace;
+  PUSH_SUBSCRIPTIONS: KVNamespace;
 }
 
 interface KVNamespace {
@@ -32,6 +33,40 @@ export async function onRequestOptions() {
       'Access-Control-Max-Age': '86400',
     },
   });
+}
+
+// 发送 Web Push 通知
+async function sendPushNotification(env: Env, domain: string, sessionId: string, message: string) {
+  try {
+    // 获取推送订阅信息
+    const key = `push:${domain}:${sessionId}`;
+    const subscriptionData = await env.PUSH_SUBSCRIPTIONS.get(key);
+    
+    if (!subscriptionData) {
+      console.log('No push subscription found for:', { domain, sessionId });
+      return;
+    }
+
+    const subscription = JSON.parse(subscriptionData);
+
+    // 使用 web-push 发送通知
+    const webpush = require('web-push');
+    
+    webpush.setVapidDetails(
+      'mailto:admin@facesome.com',
+      process.env.VAPID_PUBLIC_KEY,
+      process.env.VAPID_PRIVATE_KEY
+    );
+
+    await webpush.sendNotification(subscription, JSON.stringify({
+      text: message,
+      timestamp: Date.now()
+    }));
+
+    console.log('Push notification sent successfully');
+  } catch (error) {
+    console.error('Error sending push notification:', error);
+  }
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
@@ -78,6 +113,9 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       timestamp: Date.now(),
       sessionId
     });
+
+    // 发送推送通知
+    await sendPushNotification(context.env, domain, sessionId, replyMessage);
 
     return new Response('OK', { status: 200 });
   } catch (error) {

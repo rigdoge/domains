@@ -16,4 +16,12 @@ functions_dir = "functions"
 [[kv_namespaces]]
 binding = "MESSAGES"
 id = "031053abc53c4fe1a672bdb3a242e451"
-preview_id = "031053abc53c4fe1a672bdb3a242e451" 
+
+[[kv_namespaces]]
+binding = "PUSH_SUBSCRIPTIONS"
+id = "031053abc53c4fe1a672bdb3a242e451"  # 使用相同的 KV 命名空间
+
+# 环境变量
+[vars]
+VAPID_PUBLIC_KEY = "BIxxVmoXcHlWCbjsx70Ko79302Zq6giIE6G5JnjhAVLuOwaKMDqdA7B66cno222VhlhZeOqmUlZJkziZxe387d4"
+VAPID_PRIVATE_KEY = "UeDRSoLasTWDdeCJ1MM-La5gyxBH7f2_Af-3mXREoGw" 
