@@ -42,26 +42,26 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
     const update: TelegramUpdate = await context.request.json();
     console.log('Received update:', JSON.stringify(update));
     
-    // 只处理回复的消息
-    if (!update.message?.reply_to_message) {
-      console.log('Skipping non-reply message');
+    if (!update.message?.text) {
+      console.log('No message text');
       return new Response('OK', { status: 200 });
     }
 
-    // 从原始消息中提取域名和会话ID信息
-    const originalMessage = update.message.reply_to_message.text;
-    console.log('Original message:', originalMessage);
-    
-    const domainMatch = originalMessage.match(/Domain: ([^\n]+)/);
-    const sessionMatch = originalMessage.match(/Session: ([^\n]+)/);
-    
-    if (!domainMatch || !sessionMatch) {
-      console.error('Missing domain or session info');
-      return new Response('OK', { status: 200 });
+    let domain = 'tqdi.com';  // 默认域名
+    let sessionId = 'default';  // 默认会话ID
+
+    // 如果是回复消息，尝试从原始消息中提取域名和会话ID
+    if (update.message.reply_to_message) {
+      const originalMessage = update.message.reply_to_message.text;
+      console.log('Original message:', originalMessage);
+      
+      const domainMatch = originalMessage.match(/Domain: ([^\n]+)/);
+      const sessionMatch = originalMessage.match(/Session: ([^\n]+)/);
+      
+      if (domainMatch) domain = domainMatch[1];
+      if (sessionMatch) sessionId = sessionMatch[1];
     }
 
-    const domain = domainMatch[1];
-    const sessionId = sessionMatch[1];
     const replyMessage = update.message.text;
 
     console.log('Processing message:', {
