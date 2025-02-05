@@ -214,29 +214,37 @@ export default function Home() {
     };
 
     try {
+      // 先添加用户消息到界面
       setMessages(prev => [...prev, currentMessage]);
-      setNewMessage('');
+      const messageToSend = newMessage;  // 保存消息内容的副本
+      setNewMessage('');  // 清空输入框
       
-      const response = await fetch(`${API_ENDPOINTS.CHAT}`, {
+      console.log('Sending message:', {
+        message: messageToSend,
+        domain: domain.name,
+        sessionId
+      });
+
+      const response = await fetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: newMessage,
+          message: messageToSend,
           domain: domain.name,
           sessionId
         }),
       });
 
+      const data = await response.json();
+      console.log('Server response:', data);
+
       if (!response.ok) {
-        throw new Error('Failed to send message');
+        throw new Error(data.error || 'Failed to send message');
       }
 
-      const data = await response.json();
-      console.log('Server response:', data);  // 添加日志
-      
-      // 只有当服务器返回了消息时才添加机器人回复
+      // 添加自动回复消息
       if (data.success && data.message) {
         const botMessage = {
           text: data.message,
@@ -248,8 +256,9 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      // 显示错误消息
       const errorMessage = {
-        text: '发送消息失败，请稍后重试',
+        text: error instanceof Error ? error.message : '发送消息失败，请稍后重试',
         isUser: false,
         timestamp: Date.now(),
         sessionId
