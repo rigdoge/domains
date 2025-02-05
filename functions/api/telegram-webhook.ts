@@ -57,6 +57,7 @@ async function sendPushNotification(env: Env, domain: string, sessionId: string,
         'Authorization': `Bearer ${env.VAPID_PRIVATE_KEY}`,
       },
       body: JSON.stringify({
+        type: 'new_message',
         message: message,
         timestamp: Date.now(),
         domain: domain,
