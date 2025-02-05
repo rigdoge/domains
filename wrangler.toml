@@ -7,15 +7,12 @@ command = "npm run build"
 [site]
 bucket = "./out"
 
-# 添加 pages_build_output_dir
-pages_build_output_dir = "out"
+# Pages 配置
+[pages]
+build_output_dir = "out"
+functions_dir = "functions"
 
-# 添加 main 字段
-main = "./functions/_worker.js"
-
-[functions]
-directory = "./functions"
-
+# KV 绑定
 [[kv_namespaces]]
 binding = "MESSAGES"
 id = "031053abc53c4fe1a672bdb3a242e451" 
