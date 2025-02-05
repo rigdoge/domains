@@ -54,11 +54,13 @@ async function sendPushNotification(env: Env, domain: string, sessionId: string,
       headers: {
         'Content-Type': 'application/octet-stream',
         'TTL': '86400',
-        'Authorization': `vapid t=${env.VAPID_PUBLIC_KEY}`,
+        'Authorization': `Bearer ${env.VAPID_PRIVATE_KEY}`,
       },
       body: JSON.stringify({
-        text: message,
-        timestamp: Date.now()
+        message: message,
+        timestamp: Date.now(),
+        domain: domain,
+        sessionId: sessionId
       })
     });
 

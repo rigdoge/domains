@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { getDomainInfo } from '@/config/domain';
 import { API_ENDPOINTS } from '@/config/env';
 
@@ -24,48 +24,44 @@ export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [sessionId] = useState(() => Math.random().toString(36).substring(7));
+  const [sessionId, setSessionId] = useState<string>('');
 
   // 注册推送服务
-  useEffect(() => {
-    async function registerPush() {
-      try {
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-          const registration = await navigator.serviceWorker.ready;
-          
-          // 请求通知权限
-          const permission = await Notification.requestPermission();
-          if (permission !== 'granted') {
-            console.log('Notification permission denied');
-            return;
-          }
-
-          // 获取推送订阅
-          const subscription = await registration.pushManager.subscribe({
-            userVisibleOnly: true,
-            applicationServerKey: 'BIxxVmoXcHlWCbjsx70Ko79302Zq6giIE6G5JnjhAVLuOwaKMDqdA7B66cno222VhlhZeOqmUlZJkziZxe387d4'
-          });
-
-          // 发送订阅信息到服务器
-          await fetch('/api/push-subscription', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              subscription,
-              domain: domain.name,
-              sessionId
-            }),
-          });
+  const registerPush = useCallback(async (currentSessionId: string) => {
+    try {
+      if ('serviceWorker' in navigator && 'PushManager' in window) {
+        const registration = await navigator.serviceWorker.ready;
+        
+        // 请求通知权限
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          console.log('Notification permission denied');
+          return;
         }
-      } catch (error) {
-        console.error('Failed to register push:', error);
-      }
-    }
 
-    registerPush();
-  }, [domain.name, sessionId]);
+        // 获取推送订阅
+        const subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: 'BIxxVmoXcHlWCbjsx70Ko79302Zq6giIE6G5JnjhAVLuOwaKMDqdA7B66cno222VhlhZeOqmUlZJkziZxe387d4'
+        });
+
+        // 发送订阅信息到服务器
+        await fetch('/api/push-subscription', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            subscription,
+            domain: domain.name,
+            sessionId: currentSessionId
+          }),
+        });
+      }
+    } catch (error) {
+      console.error('Failed to register push:', error);
+    }
+  }, [domain.name]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,12 +108,12 @@ export default function Home() {
   };
 
   // 发送初始消息
-  const sendInitialMessage = async () => {
+  const sendInitialMessage = async (currentSessionId: string) => {
     try {
       setIsSending(true);
       const initialMessage = `Domain Information:\n` +
         `Domain: ${domain.name}\n` +
-        `Session: ${sessionId}\n` +
+        `Session: ${currentSessionId}\n` +
         `Reference Price: $${domain.minBid.toLocaleString()}\n` +
         `Description: ${domain.description}\n` +
         `Status: Visitor opened chat window`;
@@ -130,7 +126,7 @@ export default function Home() {
         body: JSON.stringify({ 
           message: initialMessage,
           domain: domain.name,
-          sessionId,
+          sessionId: currentSessionId,
           isInitial: true
         }),
       });
@@ -147,16 +143,21 @@ export default function Home() {
     }
   };
 
-  const handleChatToggle = () => {
+  const handleChatToggle = async () => {
     const newChatState = !isChatOpen;
     setIsChatOpen(newChatState);
-    if (newChatState && messages.length === 0) {
-      sendInitialMessage();
+    
+    if (newChatState && !sessionId) {
+      // 只在首次打开聊天时创建新的 session
+      const newSessionId = Math.random().toString(36).substring(7);
+      setSessionId(newSessionId);
+      await registerPush(newSessionId);
+      await sendInitialMessage(newSessionId);
     }
   };
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() || !sessionId) return;
 
     setIsSending(true);
     const currentMessage = {
@@ -198,7 +199,6 @@ export default function Home() {
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      // 在UI上显示错误
       const errorMessage = {
         text: '发送消息失败，请稍后重试',
         isUser: false,
