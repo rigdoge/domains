@@ -5,6 +5,8 @@ interface Env {
   TELEGRAM_CHAT_ID: string;
   MESSAGES: KVNamespace;
   PUSH_SUBSCRIPTIONS: KVNamespace;
+  VAPID_PUBLIC_KEY: string;
+  VAPID_PRIVATE_KEY: string;
 }
 
 interface TelegramUpdate {
@@ -46,19 +48,23 @@ async function sendPushNotification(env: Env, domain: string, sessionId: string,
 
     const subscription = JSON.parse(subscriptionData);
 
-    // 使用 web-push 发送通知
-    const webpush = require('web-push');
-    
-    webpush.setVapidDetails(
-      'mailto:admin@facesome.com',
-      process.env.VAPID_PUBLIC_KEY,
-      process.env.VAPID_PRIVATE_KEY
-    );
+    // 使用 fetch 发送推送通知
+    const response = await fetch(subscription.endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/octet-stream',
+        'TTL': '86400',
+        'Authorization': `vapid t=${env.VAPID_PUBLIC_KEY}`,
+      },
+      body: JSON.stringify({
+        text: message,
+        timestamp: Date.now()
+      })
+    });
 
-    await webpush.sendNotification(subscription, JSON.stringify({
-      text: message,
-      timestamp: Date.now()
-    }));
+    if (!response.ok) {
+      throw new Error(`Push service responded with ${response.status}`);
+    }
 
     console.log('Push notification sent successfully');
   } catch (error) {

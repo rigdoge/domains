@@ -1,5 +1,6 @@
 name = "domains"
 compatibility_date = "2024-02-04"
+nodejs_compat = true
 
 [build]
 command = "npm run build"
