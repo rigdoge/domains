@@ -8,6 +8,7 @@ interface Message {
   text: string;
   timestamp: number;
   isUser: boolean;
+  sessionId: string;
 }
 
 export default function Home() {
@@ -161,7 +162,8 @@ export default function Home() {
     const currentMessage = {
       text: newMessage,
       isUser: true,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      sessionId
     };
 
     try {
@@ -189,7 +191,8 @@ export default function Home() {
         const botMessage = {
           text: data.message,
           isUser: false,
-          timestamp: Date.now()
+          timestamp: Date.now(),
+          sessionId
         };
         setMessages(prev => [...prev, botMessage]);
       }
@@ -199,7 +202,8 @@ export default function Home() {
       const errorMessage = {
         text: '发送消息失败，请稍后重试',
         isUser: false,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        sessionId
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {
