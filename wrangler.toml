@@ -12,5 +12,5 @@ directory = "./functions"
 
 [[kv_namespaces]]
 binding = "MESSAGES"
-id = "YOUR_KV_ID"
-preview_id = "YOUR_PREVIEW_KV_ID" 
+id = "031053abc53c4fe1a672bdb3a242e451"
+preview_id = "031053abc53c4fe1a672bdb3a242e451" 
