@@ -1,15 +1,11 @@
 name = "domains"
 compatibility_date = "2024-02-04"
 
-[site]
-bucket = "./out"
-
 [build]
 command = "npm run build"
-pages_build_output_dir = "out"
 
-[build.output]
-pages_build_output_dir = "./out"
+[site]
+bucket = "./out"
 
 [functions]
 directory = "./functions"
@@ -17,7 +13,4 @@ directory = "./functions"
 [[kv_namespaces]]
 binding = "MESSAGES"
 id = "YOUR_KV_ID"
-preview_id = "YOUR_PREVIEW_KV_ID"
-
-[build.upload]
-format = "service-worker" 
+preview_id = "YOUR_PREVIEW_KV_ID" 
