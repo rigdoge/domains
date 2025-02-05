@@ -4,6 +4,12 @@ import React, { useState, useEffect } from 'react';
 import { getDomainInfo } from '@/config/domain';
 import { API_ENDPOINTS } from '@/config/env';
 
+interface Message {
+  text: string;
+  timestamp: number;
+  isUser: boolean;
+}
+
 export default function Home() {
   const domain = getDomainInfo();
   console.log('Initial domain:', domain);
@@ -14,7 +20,7 @@ export default function Home() {
   const [success, setSuccess] = useState<string>('');
 
   const [isChatOpen, setIsChatOpen] = useState(false);
-  const [messages, setMessages] = useState<{text: string; isUser: boolean; timestamp?: number}[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
@@ -30,19 +36,28 @@ export default function Home() {
         const data = await response.json();
 
         if (data.success && data.messages.length > 0) {
-          setMessages(prev => [...prev, ...data.messages]);
-          // 更新最后消息时间
-          const latestMessage = data.messages.reduce((latest: any, current: any) => 
-            latest.timestamp > current.timestamp ? latest : current
-          );
-          setLastMessageTime(latestMessage.timestamp);
+          // 添加新消息到消息列表
+          const newMessages = data.messages.filter((msg: Message) => {
+            // 确保消息不重复
+            return !messages.some((existingMsg: Message) => 
+              existingMsg.text === msg.text && 
+              existingMsg.timestamp === msg.timestamp
+            );
+          });
+          
+          if (newMessages.length > 0) {
+            setMessages(prev => [...prev, ...newMessages]);
+            // 更新最后消息时间为最新消息的时间戳
+            const latestTimestamp = Math.max(...newMessages.map((msg: Message) => msg.timestamp));
+            setLastMessageTime(latestTimestamp);
+          }
         }
       } catch (error) {
         console.error('Error polling messages:', error);
       }
     };
 
-    const intervalId = setInterval(pollMessages, 3000); // 每3秒轮询一次
+    const intervalId = setInterval(pollMessages, 1000); // 改为1秒轮询一次
 
     return () => clearInterval(intervalId);
   }, [isChatOpen, domain.name, lastMessageTime]);
@@ -135,49 +150,53 @@ export default function Home() {
     }
   };
 
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || isSending) return;
+  const handleSendMessage = async () => {
+    if (!newMessage.trim()) return;
+
+    setIsSending(true);
+    const currentMessage = {
+      text: newMessage,
+      isUser: true,
+      timestamp: Date.now()
+    };
 
     try {
-      setIsSending(true);
-      const userMessage = { text: newMessage, isUser: true };
-      setMessages(prev => [...prev, userMessage]);
+      setMessages(prev => [...prev, currentMessage]);
       setNewMessage('');
-
-      const response = await fetch(API_ENDPOINTS.CHAT, {
+      
+      const response = await fetch(`${API_ENDPOINTS.CHAT}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           message: newMessage,
-          domain: domain.name,
-          sessionId
+          domain: domain.name
         }),
       });
 
-      const data = await response.json();
-
       if (!response.ok) {
-        throw new Error(data.message || 'Failed to send message');
+        throw new Error('Failed to send message');
       }
 
-      // 如果收到回复，添加到消息列表
-      if (data.success && data.message) {
-        setMessages(prev => [...prev, {
+      const data = await response.json();
+      if (data.success) {
+        const botMessage = {
           text: data.message,
-          isUser: false
-        }]);
+          isUser: false,
+          timestamp: Date.now()
+        };
+        setMessages(prev => [...prev, botMessage]);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages(prev => [...prev, { 
-        text: error instanceof Error 
-          ? `Error: ${error.message}` 
-          : 'Failed to send message, please try again later.',
-        isUser: false 
-      }]);
+      // 在UI上显示错误
+      const errorMessage = {
+        text: '发送消息失败，请稍后重试',
+        isUser: false,
+        timestamp: Date.now()
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsSending(false);
     }
@@ -269,22 +288,24 @@ export default function Home() {
                   
                   {/* 消息区域 */}
                   <div className="flex-grow overflow-y-auto p-6 space-y-4 custom-scrollbar">
-                    {messages.map((msg, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${msg.isUser ? 'justify-end' : 'justify-start'}`}
-                      >
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                      {messages.map((message, index) => (
                         <div
-                          className={`max-w-[80%] rounded-2xl px-4 py-2 shadow-sm ${
-                            msg.isUser
-                              ? 'bg-gradient-to-br from-emerald-500 to-emerald-600 text-white'
-                              : 'bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-100'
-                          }`}
+                          key={index}
+                          className={`flex ${message.isUser ? 'justify-end' : 'justify-start'}`}
                         >
-                          {msg.text}
+                          <div
+                            className={`max-w-[70%] rounded-lg p-3 ${
+                              message.isUser
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 dark:bg-gray-700'
+                            }`}
+                          >
+                            {message.text}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </div>
 
                   {/* 输入区域 */}
