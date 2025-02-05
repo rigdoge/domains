@@ -31,12 +31,15 @@ export default function Home() {
     if (!('serviceWorker' in navigator)) return;
 
     const messageHandler = (event: MessageEvent) => {
-      if (event.data && event.data.type === 'new_message') {
+      console.log('Received message from SW:', event.data);  // 添加日志
+      
+      if (event.data && (event.data.type === 'PUSH_MESSAGE' || event.data.type === 'new_message')) {
         // 检查消息是否属于当前会话
         if (event.data.sessionId === sessionId && event.data.domain === domain.name) {
+          console.log('Adding new message to chat:', event.data);  // 添加日志
           const newMessage = {
             text: event.data.message,
-            timestamp: event.data.timestamp,
+            timestamp: event.data.timestamp || Date.now(),
             isUser: false,
             sessionId: event.data.sessionId
           };
@@ -84,19 +87,6 @@ export default function Home() {
             domain: domain.name,
             sessionId: currentSessionId
           }),
-        });
-
-        // 监听推送消息
-        navigator.serviceWorker.addEventListener('message', (event) => {
-          if (event.data && event.data.type === 'PUSH_MESSAGE') {
-            const message = {
-              text: event.data.message,
-              isUser: false,
-              timestamp: event.data.timestamp || Date.now(),
-              sessionId: event.data.sessionId
-            };
-            setMessages(prev => [...prev, message]);
-          }
         });
       }
     } catch (error) {
