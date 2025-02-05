@@ -1,6 +1,12 @@
+interface KVNamespace {
+  get(key: string): Promise<string | null>;
+  put(key: string, value: string): Promise<void>;
+}
+
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
+  MESSAGES: KVNamespace;
 }
 
 interface TelegramUpdate {
@@ -64,19 +70,21 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // 直接返回消息给前端
-    return new Response(
-      JSON.stringify({ 
-        success: true,
-        message: replyMessage
-      }),
-      { 
-        headers: { 
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
-        }
-      }
-    );
+    // 保存消息到 KV 存储
+    const messagesKey = `messages:${domain}`;
+    const storedMessages = await context.env.MESSAGES.get(messagesKey);
+    const messages = storedMessages ? JSON.parse(storedMessages) : [];
+    
+    messages.push({
+      text: replyMessage,
+      isUser: false,
+      timestamp: Date.now(),
+      sessionId
+    });
+
+    await context.env.MESSAGES.put(messagesKey, JSON.stringify(messages));
+
+    return new Response('OK', { status: 200 });
   } catch (error) {
     console.error('Error handling telegram webhook:', error);
     return new Response(
