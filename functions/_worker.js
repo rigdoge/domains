@@ -28,35 +28,35 @@ export default {
         switch (apiPath) {
           case 'bid':
             if (request.method === 'POST') {
-              const { onRequestPost } = await import('./api/bid.ts');
+              const { onRequestPost } = await import('./api/bid');
               return await onRequestPost({ request, env });
             }
             break;
 
           case 'chat':
             if (request.method === 'POST') {
-              const { onRequestPost } = await import('./api/chat.ts');
+              const { onRequestPost } = await import('./api/chat');
               return await onRequestPost({ request, env });
             }
             break;
 
           case 'messages':
             if (request.method === 'GET') {
-              const { onRequestGet } = await import('./api/messages.ts');
+              const { onRequestGet } = await import('./api/messages');
               return await onRequestGet({ request, env });
             }
             break;
 
           case 'telegram-webhook':
             if (request.method === 'POST') {
-              const { onRequestPost } = await import('./api/telegram-webhook.ts');
+              const { onRequestPost } = await import('./api/telegram-webhook');
               return await onRequestPost({ request, env });
             }
             break;
 
           case 'setup-webhook':
             if (request.method === 'GET') {
-              const { onRequestGet } = await import('./api/setup-webhook.ts');
+              const { onRequestGet } = await import('./api/setup-webhook');
               return await onRequestGet({ request, env });
             }
             break;

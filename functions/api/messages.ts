@@ -48,13 +48,38 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     console.log('Request params:', { domain, since });
 
     if (!domain) {
-      throw new Error('Missing domain parameter');
+      console.error('Missing domain parameter');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Missing domain parameter' 
+        }),
+        {
+          status: 400,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
     }
 
     // 检查 KV 是否正确配置
     if (!context.env.MESSAGES) {
       console.error('KV namespace MESSAGES is not configured');
-      throw new Error('KV storage is not properly configured');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'KV storage is not properly configured' 
+        }),
+        {
+          status: 500,
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
     }
 
     // 从 KV 获取消息
@@ -64,8 +89,28 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     const storedData = await context.env.MESSAGES.get(messagesKey);
     console.log('Stored data:', storedData);
     
-    let messages: Message[] = storedData ? JSON.parse(storedData) : [];
-    console.log('Parsed messages:', messages);
+    let messages: Message[] = [];
+    if (storedData) {
+      try {
+        messages = JSON.parse(storedData);
+        console.log('Parsed messages:', messages);
+      } catch (parseError) {
+        console.error('Error parsing stored messages:', parseError);
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Invalid message data format' 
+          }),
+          {
+            status: 500,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': '*',
+            },
+          }
+        );
+      }
+    }
 
     // 清理过期消息
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
@@ -102,7 +147,8 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error instanceof Error ? error.message : 'Unknown error' 
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: error instanceof Error ? error.stack : undefined
       }),
       {
         status: 500,
@@ -132,7 +178,15 @@ export async function storeMessage(env: Env, domain: string, message: Message) {
     const storedData = await env.MESSAGES.get(messagesKey);
     console.log('Existing stored data:', storedData);
     
-    const messages: Message[] = storedData ? JSON.parse(storedData) : [];
+    let messages: Message[] = [];
+    if (storedData) {
+      try {
+        messages = JSON.parse(storedData);
+      } catch (parseError) {
+        console.error('Error parsing existing messages:', parseError);
+        throw new Error('Invalid existing message data format');
+      }
+    }
     console.log('Existing messages:', messages);
     
     messages.push(message);
