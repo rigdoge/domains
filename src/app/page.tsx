@@ -24,7 +24,6 @@ export default function Home() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sessionId] = useState(() => Math.random().toString(36).substring(7));
-  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
 
   // 注册推送服务
   useEffect(() => {
@@ -66,42 +65,6 @@ export default function Home() {
 
     registerPush();
   }, [domain.name, sessionId]);
-
-  // 轮询获取新消息
-  useEffect(() => {
-    if (!isChatOpen) return;
-
-    const pollMessages = async () => {
-      try {
-        const response = await fetch(`${API_ENDPOINTS.MESSAGES}?domain=${domain.name}&since=${lastMessageTime}`);
-        const data = await response.json();
-
-        if (data.success && data.messages.length > 0) {
-          // 添加新消息到消息列表
-          const newMessages = data.messages.filter((msg: Message) => {
-            // 确保消息不重复
-            return !messages.some((existingMsg: Message) => 
-              existingMsg.text === msg.text && 
-              existingMsg.timestamp === msg.timestamp
-            );
-          });
-          
-          if (newMessages.length > 0) {
-            setMessages(prev => [...prev, ...newMessages]);
-            // 更新最后消息时间为最新消息的时间戳
-            const latestTimestamp = Math.max(...newMessages.map((msg: Message) => msg.timestamp));
-            setLastMessageTime(latestTimestamp);
-          }
-        }
-      } catch (error) {
-        console.error('Error polling messages:', error);
-      }
-    };
-
-    const intervalId = setInterval(pollMessages, 1000); // 改为1秒轮询一次
-
-    return () => clearInterval(intervalId);
-  }, [isChatOpen, domain.name, lastMessageTime]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -212,7 +175,8 @@ export default function Home() {
         },
         body: JSON.stringify({
           message: newMessage,
-          domain: domain.name
+          domain: domain.name,
+          sessionId
         }),
       });
 
