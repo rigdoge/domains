@@ -1,5 +1,9 @@
 // 环境变量配置
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://domains.pages.dev';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || (
+  typeof window !== 'undefined' && window.location.hostname === 'domains.facesome.com'
+    ? 'https://domains.facesome.com'
+    : 'https://domains-9vn.pages.dev'
+);
 
 // API 端点
 export const API_ENDPOINTS = {
