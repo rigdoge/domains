@@ -15,4 +15,5 @@ functions_dir = "functions"
 # KV 绑定
 [[kv_namespaces]]
 binding = "MESSAGES"
-id = "031053abc53c4fe1a672bdb3a242e451" 
+id = "031053abc53c4fe1a672bdb3a242e451"
+preview_id = "031053abc53c4fe1a672bdb3a242e451" 
