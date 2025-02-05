@@ -6,6 +6,8 @@
  * 3. 使用 KV 存储消息
  */
 
+import type { KVNamespace } from '@cloudflare/workers-types';
+
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
@@ -17,11 +19,6 @@ interface Message {
   isUser: boolean;
   timestamp: number;
   sessionId: string;
-}
-
-interface KVNamespace {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string): Promise<void>;
 }
 
 // 处理 CORS 预检请求
