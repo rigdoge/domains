@@ -55,28 +55,17 @@ export default {
             break;
 
           case 'setup-webhook':
-            if (request.method === 'POST') {
-              const { onRequestPost } = await import('./api/setup-webhook.ts');
-              return await onRequestPost({ request, env });
+            if (request.method === 'GET') {
+              const { onRequestGet } = await import('./api/setup-webhook.ts');
+              return await onRequestGet({ request, env });
             }
             break;
         }
 
         // 如果没有匹配的路由或方法
-        if (request.method === 'GET') {
-          return new Response(`Method ${request.method} not allowed`, { 
-            status: 405,
-            headers: {
-              'Allow': 'POST, OPTIONS',
-              'Content-Type': 'text/plain',
-              'Access-Control-Allow-Origin': '*'
-            }
-          });
-        }
-
-        return new Response('Not Found', { 
-          status: 404,
-          headers: { 
+        return new Response(`Method ${request.method} not allowed for ${apiPath}`, { 
+          status: 405,
+          headers: {
             'Content-Type': 'text/plain',
             'Access-Control-Allow-Origin': '*'
           }
@@ -87,6 +76,11 @@ export default {
       return await env.ASSETS.fetch(request);
     } catch (error) {
       console.error('Worker error:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       return new Response(error.message || 'Server Error', { 
         status: 500,
         headers: { 

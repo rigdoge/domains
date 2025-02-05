@@ -7,6 +7,12 @@ command = "npm run build"
 [site]
 bucket = "./out"
 
+# 添加 pages_build_output_dir
+pages_build_output_dir = "out"
+
+# 添加 main 字段
+main = "./functions/_worker.js"
+
 [functions]
 directory = "./functions"
 
