@@ -319,7 +319,10 @@ export default function Home() {
 
                   {/* 输入区域 */}
                   <div className="border-t dark:border-gray-700 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm">
-                    <form onSubmit={handleSendMessage} className="flex gap-3 p-6">
+                    <form onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }} className="flex gap-3 p-6">
                       <input
                         type="text"
                         value={newMessage}
