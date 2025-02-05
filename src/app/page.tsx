@@ -13,7 +13,12 @@ interface Message {
 
 export default function Home() {
   const domain = getDomainInfo();
-  console.log('Initial domain:', domain);
+
+  // 使用 useEffect 来处理客户端代码
+  useEffect(() => {
+    console.log('Initial domain:', domain);
+  }, [domain]);
+
   const [bidAmount, setBidAmount] = useState<string>(domain.minBid.toString());
   const [contact, setContact] = useState<string>('');
   const [isBidding, setIsBidding] = useState(false);

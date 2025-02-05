@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 
@@ -11,8 +11,13 @@ export const metadata: Metadata = {
   icons: {
     icon: '/favicon.ico',
     apple: '/icons/icon-192x192.png',
-  },
+  }
+};
+
+export const viewport: Viewport = {
   themeColor: '#10b981',
+  width: 'device-width',
+  initialScale: 1
 };
 
 export default function RootLayout({
@@ -26,7 +31,6 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
-        <meta name="theme-color" content="#10b981" />
       </head>
       <body className={inter.className}>{children}</body>
     </html>
