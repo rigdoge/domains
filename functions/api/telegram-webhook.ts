@@ -66,7 +66,7 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
 
     // 保存消息
     const { storeMessage } = await import('./messages');
-    storeMessage(domain, {
+    await storeMessage(context.env, domain, {
       text: replyMessage,
       isUser: false,
       timestamp: Date.now(),
