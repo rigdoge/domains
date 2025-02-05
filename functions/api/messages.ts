@@ -13,17 +13,18 @@ interface Message {
   sessionId: string;
 }
 
-// 从 URL 获取消息
-async function getMessages(domain: string): Promise<Message[]> {
-  try {
-    const response = await fetch(`https://domains.facesome.com/messages/${domain}.json`);
-    if (response.ok) {
-      return await response.json();
+// 使用内存存储消息
+const messageStore: { [domain: string]: Message[] } = {};
+
+// 清理过期消息
+function cleanupMessages() {
+  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  for (const domain in messageStore) {
+    messageStore[domain] = messageStore[domain].filter(msg => msg.timestamp > oneWeekAgo);
+    if (messageStore[domain].length === 0) {
+      delete messageStore[domain];
     }
-  } catch (error) {
-    console.error('Error fetching messages:', error);
   }
-  return [];
 }
 
 export async function onRequestGet(context: { request: Request; env: Env }) {
@@ -36,16 +37,16 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
       throw new Error('Missing domain parameter');
     }
 
-    const messages = await getMessages(domain);
+    // 清理过期消息
+    cleanupMessages();
 
-    // 清理超过一周的消息
-    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-    const validMessages = messages.filter(msg => msg.timestamp > oneWeekAgo);
+    // 获取消息
+    const messages = messageStore[domain] || [];
 
     // 过滤出指定时间之后的消息
     const filteredMessages = since 
-      ? validMessages.filter(msg => msg.timestamp > parseInt(since))
-      : validMessages;
+      ? messages.filter(msg => msg.timestamp > parseInt(since))
+      : messages;
 
     // 按时间戳排序
     filteredMessages.sort((a, b) => a.timestamp - b.timestamp);
@@ -80,20 +81,11 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 }
 
 // 导出存储消息的函数供其他模块使用
-export async function storeMessage(domain: string, message: Message) {
-  const messages = await getMessages(domain);
-  messages.push(message);
-
-  // 创建一个新的 JSON 文件
-  const response = await fetch(`https://domains.facesome.com/messages/${domain}.json`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(messages),
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to store message');
+export function storeMessage(domain: string, message: Message) {
+  if (!messageStore[domain]) {
+    messageStore[domain] = [];
   }
+  messageStore[domain].push(message);
+  console.log(`Stored message for ${domain}:`, message);
+  console.log('Current messages:', messageStore[domain]);
 } 
