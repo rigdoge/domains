@@ -24,34 +24,63 @@ interface KVNamespace {
   put(key: string, value: string): Promise<void>;
 }
 
+// 处理 CORS 预检请求
+export async function onRequestOptions() {
+  return new Response(null, {
+    status: 204,
+    headers: {
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type',
+      'Access-Control-Max-Age': '86400',
+    },
+  });
+}
+
 export async function onRequestGet(context: { request: Request; env: Env }) {
+  console.log('Received messages request');
+  
   try {
     const url = new URL(context.request.url);
     const domain = url.searchParams.get('domain');
     const since = url.searchParams.get('since');
 
+    console.log('Request params:', { domain, since });
+
     if (!domain) {
       throw new Error('Missing domain parameter');
     }
 
+    // 检查 KV 是否正确配置
+    if (!context.env.MESSAGES) {
+      console.error('KV namespace MESSAGES is not configured');
+      throw new Error('KV storage is not properly configured');
+    }
+
     // 从 KV 获取消息
     const messagesKey = `messages:${domain}`;
+    console.log('Fetching messages for key:', messagesKey);
+    
     const storedData = await context.env.MESSAGES.get(messagesKey);
+    console.log('Stored data:', storedData);
+    
     let messages: Message[] = storedData ? JSON.parse(storedData) : [];
+    console.log('Parsed messages:', messages);
 
     // 清理过期消息
     const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
     messages = messages.filter(msg => msg.timestamp > oneWeekAgo);
+    console.log('Messages after cleanup:', messages);
 
     // 过滤出指定时间之后的消息
     const filteredMessages = since 
       ? messages.filter(msg => msg.timestamp > parseInt(since))
       : messages;
 
+    console.log('Filtered messages:', filteredMessages);
+
     // 按时间戳排序
     filteredMessages.sort((a, b) => a.timestamp - b.timestamp);
-
-    console.log('Filtered messages:', filteredMessages);
 
     return new Response(
       JSON.stringify({ success: true, messages: filteredMessages }),
@@ -64,6 +93,12 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
     );
   } catch (error) {
     console.error('Error in messages API:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
@@ -82,17 +117,42 @@ export async function onRequestGet(context: { request: Request; env: Env }) {
 
 // 导出存储消息的函数供其他模块使用
 export async function storeMessage(env: Env, domain: string, message: Message) {
-  const messagesKey = `messages:${domain}`;
-  const storedData = await env.MESSAGES.get(messagesKey);
-  const messages: Message[] = storedData ? JSON.parse(storedData) : [];
+  console.log('Storing message:', { domain, message });
   
-  messages.push(message);
-  
-  // 清理过期消息
-  const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
-  const validMessages = messages.filter(msg => msg.timestamp > oneWeekAgo);
-  
-  await env.MESSAGES.put(messagesKey, JSON.stringify(validMessages));
-  console.log(`Stored message for ${domain}:`, message);
-  console.log('Current messages:', validMessages);
+  try {
+    // 检查 KV 是否正确配置
+    if (!env.MESSAGES) {
+      console.error('KV namespace MESSAGES is not configured');
+      throw new Error('KV storage is not properly configured');
+    }
+    
+    const messagesKey = `messages:${domain}`;
+    console.log('Using key:', messagesKey);
+    
+    const storedData = await env.MESSAGES.get(messagesKey);
+    console.log('Existing stored data:', storedData);
+    
+    const messages: Message[] = storedData ? JSON.parse(storedData) : [];
+    console.log('Existing messages:', messages);
+    
+    messages.push(message);
+    
+    // 清理过期消息
+    const oneWeekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    const validMessages = messages.filter(msg => msg.timestamp > oneWeekAgo);
+    
+    const dataToStore = JSON.stringify(validMessages);
+    console.log('Storing data:', dataToStore);
+    
+    await env.MESSAGES.put(messagesKey, dataToStore);
+    console.log('Message stored successfully');
+  } catch (error) {
+    console.error('Error storing message:', error);
+    console.error('Error details:', {
+      name: error instanceof Error ? error.name : 'Unknown',
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    });
+    throw error;
+  }
 } 
