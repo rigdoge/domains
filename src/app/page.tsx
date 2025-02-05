@@ -25,6 +25,7 @@ export default function Home() {
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sessionId, setSessionId] = useState<string>('');
+  const [lastMessageTime, setLastMessageTime] = useState<number>(0);
 
   // 注册推送服务
   const registerPush = useCallback(async (currentSessionId: string) => {
@@ -62,6 +63,64 @@ export default function Home() {
       console.error('Failed to register push:', error);
     }
   }, [domain.name]);
+
+  // 轮询获取新消息
+  useEffect(() => {
+    if (!isChatOpen || !sessionId) return;
+
+    const fetchNewMessages = async () => {
+      try {
+        const response = await fetch(
+          `${API_ENDPOINTS.MESSAGES}?domain=${domain.name}&since=${lastMessageTime}`,
+          {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch messages');
+        }
+
+        const data = await response.json();
+        if (data.success && data.messages) {
+          // 过滤出当前会话的消息
+          const sessionMessages = data.messages.filter(
+            (msg: Message) => msg.sessionId === sessionId
+          );
+          
+          if (sessionMessages.length > 0) {
+            setMessages(prev => {
+              // 合并消息并去重
+              const allMessages = [...prev, ...sessionMessages];
+              const uniqueMessages = allMessages.filter((msg, index, self) =>
+                index === self.findIndex((m) => 
+                  m.timestamp === msg.timestamp && m.text === msg.text
+                )
+              );
+              // 按时间排序
+              return uniqueMessages.sort((a, b) => a.timestamp - b.timestamp);
+            });
+            
+            // 更新最后消息时间
+            const latestMessage = sessionMessages[sessionMessages.length - 1];
+            setLastMessageTime(latestMessage.timestamp);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching messages:', error);
+      }
+    };
+
+    // 每秒轮询一次
+    const pollInterval = setInterval(fetchNewMessages, 1000);
+
+    return () => {
+      clearInterval(pollInterval);
+    };
+  }, [isChatOpen, sessionId, domain.name, lastMessageTime]);
 
   const handleBidSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,7 +247,10 @@ export default function Home() {
       }
 
       const data = await response.json();
-      if (data.success) {
+      console.log('Server response:', data);  // 添加日志
+      
+      // 只有当服务器返回了消息时才添加机器人回复
+      if (data.success && data.message) {
         const botMessage = {
           text: data.message,
           isUser: false,

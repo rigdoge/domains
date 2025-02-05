@@ -1,6 +1,9 @@
+import type { KVNamespace } from '@cloudflare/workers-types';
+
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
+  MESSAGES: KVNamespace;
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }) {
@@ -43,8 +46,36 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       throw new Error(result.description || 'Failed to send message to Telegram');
     }
 
+    // 如果是初始消息，不需要自动回复
+    if (isInitial) {
+      return new Response(
+        JSON.stringify({ success: true }),
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            'Access-Control-Allow-Origin': '*',
+          },
+        }
+      );
+    }
+
+    // 生成自动回复消息
+    const autoReply = `我们已收到您的消息，客服会尽快回复。\n\n您的消息：${message}`;
+
+    // 保存消息到 KV
+    const { storeMessage } = await import('./messages');
+    await storeMessage(context.env, domain, {
+      text: autoReply,
+      isUser: false,
+      timestamp: Date.now(),
+      sessionId
+    });
+
     return new Response(
-      JSON.stringify({ success: true }),
+      JSON.stringify({ 
+        success: true,
+        message: autoReply
+      }),
       {
         headers: {
           'Content-Type': 'application/json',
