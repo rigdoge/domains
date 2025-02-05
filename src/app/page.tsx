@@ -1,17 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { domains, DomainInfo } from '@/config/domain';
-
-function getDomainInfo(): DomainInfo {
-  // 不再从 hostname 获取域名信息
-  // 而是从 URL 参数或者其他方式获取要销售的域名
-  return {
-    name: 'tqdi.com',
-    minBid: 999,
-    description: 'Premium domain name available for purchase'
-  };
-}
+import { getDomainInfo } from '@/config/domain';
+import { API_ENDPOINTS } from '@/config/env';
 
 export default function Home() {
   const domain = getDomainInfo();
@@ -35,7 +26,7 @@ export default function Home() {
 
     const pollMessages = async () => {
       try {
-        const response = await fetch(`/api/messages?domain=${domain.name}&since=${lastMessageTime}`);
+        const response = await fetch(`${API_ENDPOINTS.MESSAGES}?domain=${domain.name}&since=${lastMessageTime}`);
         const data = await response.json();
 
         if (data.success && data.messages.length > 0) {
@@ -72,7 +63,7 @@ export default function Home() {
         throw new Error('Please enter a valid bid amount');
       }
 
-      const response = await fetch('/api/bid', {
+      const response = await fetch(API_ENDPOINTS.BID, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -111,7 +102,7 @@ export default function Home() {
         `Description: ${domain.description}\n` +
         `Status: Visitor opened chat window`;
       
-      const response = await fetch('/api/chat', {
+      const response = await fetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -154,7 +145,7 @@ export default function Home() {
       setMessages(prev => [...prev, userMessage]);
       setNewMessage('');
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch(API_ENDPOINTS.CHAT, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
