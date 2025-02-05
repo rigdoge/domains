@@ -1,12 +1,6 @@
-interface KVNamespace {
-  get(key: string): Promise<string | null>;
-  put(key: string, value: string): Promise<void>;
-}
-
 interface Env {
   TELEGRAM_BOT_TOKEN: string;
   TELEGRAM_CHAT_ID: string;
-  MESSAGES: KVNamespace;
 }
 
 interface TelegramUpdate {
@@ -70,19 +64,14 @@ export async function onRequestPost(context: { request: Request; env: Env }) {
       replyMessage
     });
 
-    // 保存消息到 KV 存储
-    const messagesKey = `messages:${domain}`;
-    const storedMessages = await context.env.MESSAGES.get(messagesKey);
-    const messages = storedMessages ? JSON.parse(storedMessages) : [];
-    
-    messages.push({
+    // 保存消息
+    const { storeMessage } = await import('./messages');
+    await storeMessage(domain, {
       text: replyMessage,
       isUser: false,
       timestamp: Date.now(),
       sessionId
     });
-
-    await context.env.MESSAGES.put(messagesKey, JSON.stringify(messages));
 
     return new Response('OK', { status: 200 });
   } catch (error) {
